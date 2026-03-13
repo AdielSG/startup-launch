@@ -22,7 +22,7 @@ class Settings(BaseSettings):
 
     openai_api_key:    str = ""
     apify_api_token:   str = ""
-    database_url:      str = "sqlite:///./launches.db"
+    database_url:      str = "sqlite:///./launches.db"  # overridden by DATABASE_URL env var in production
 
 
 settings = Settings()
