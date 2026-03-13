@@ -1,5 +1,7 @@
 from pathlib import Path
+from typing import Any
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Resolve .env regardless of working directory.
@@ -23,6 +25,11 @@ class Settings(BaseSettings):
     openai_api_key:    str = ""
     apify_api_token:   str = ""
     database_url:      str = "sqlite:///./launches.db"  # overridden by DATABASE_URL env var in production
+
+    @field_validator("database_url", "openai_api_key", "apify_api_token", mode="before")
+    @classmethod
+    def strip_whitespace(cls, v: Any) -> Any:
+        return v.strip() if isinstance(v, str) else v
 
 
 settings = Settings()
