@@ -20,12 +20,39 @@ from scheduler import shutdown_scheduler, start_scheduler
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     _check_api_keys()          # exits with code 1 if required keys are missing
-    Base.metadata.create_all(bind=engine)
-    _run_migrations()
-    _seed_default_settings()
-    start_scheduler()
+
+    try:
+        print("Creating DB tables...", flush=True)
+        Base.metadata.create_all(bind=engine)
+        print("DB tables ready.", flush=True)
+    except Exception as exc:
+        print(f"ERROR — Base.metadata.create_all failed: {exc}", flush=True)
+        raise
+
+    try:
+        _run_migrations()
+    except Exception as exc:
+        print(f"ERROR — _run_migrations failed: {exc}", flush=True)
+        raise
+
+    try:
+        _seed_default_settings()
+    except Exception as exc:
+        print(f"ERROR — _seed_default_settings failed: {exc}", flush=True)
+        raise
+
+    try:
+        start_scheduler()
+    except Exception as exc:
+        # Scheduler is non-critical in serverless; log and continue.
+        print(f"WARNING — scheduler failed to start (non-fatal): {exc}", flush=True)
+
     yield
-    shutdown_scheduler()
+
+    try:
+        shutdown_scheduler()
+    except Exception:
+        pass
 
 
 def _check_api_keys() -> None:
