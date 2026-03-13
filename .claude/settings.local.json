@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:apify.com)",
+      "WebFetch(domain:api.apify.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebSearch",
+      "WebFetch(domain:blog.apify.com)",
+      "WebFetch(domain:apifyusercontent.com)",
+      "WebFetch(domain:apidojo.io)",
+      "WebFetch(domain:help.apify.com)",
+      "WebFetch(domain:scrapfly.io)",
+      "Bash(python:*)",
+      "Bash(curl:*)"
+    ]
+  }
+}

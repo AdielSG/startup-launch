@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { THRESHOLDS, isPoorPerformer } from './data/mockData'
 import { useCompanies } from './hooks/useCompanies'
+import { useSettings } from './hooks/useSettings'
 import { triggerScrape } from './api/companies'
 import Sidebar from './components/Sidebar'
 import StatsBar from './components/StatsBar'
 import FilterBar from './components/FilterBar'
 import LaunchTable from './components/LaunchTable'
 import SettingsPanel from './components/SettingsPanel'
+import WelcomeModal from './components/WelcomeModal'
 
 // ── Inline loading / error states ─────────────────────────────────────────────
 
@@ -42,13 +44,27 @@ function ErrorBanner({ message, onRetry }) {
 export default function App() {
   const { companies, loading, error, reload } = useCompanies()
 
+  const { settings, updateSettings } = useSettings()
+
+  const [welcomeOpen,  setWelcomeOpen]  = useState(() => !localStorage.getItem('welcomeSeen'))
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [scraping,     setScraping]     = useState(false)
   const [scrapeToast,  setScrapeToast]  = useState(null)   // { type: 'ok'|'error', msg: string }
   const [activeNav,    setActiveNav]    = useState('dashboard')
   const [batchFilter,  setBatchFilter]  = useState('')
   const [perfFilter,   setPerfFilter]   = useState('')
-  const [thresholds,   setThresholds]   = useState(THRESHOLDS)
+
+  // Derive thresholds from backend settings; fall back to defaults while loading
+  const thresholds = settings
+    ? { xLikes: settings.twitter_likes_threshold, liLikes: settings.linkedin_likes_threshold }
+    : THRESHOLDS
+
+  async function handleSaveSettings(newThresholds) {
+    await updateSettings({
+      twitter_likes_threshold:  newThresholds.xLikes,
+      linkedin_likes_threshold: newThresholds.liLikes,
+    })
+  }
 
   async function handleRefresh() {
     setScraping(true)
@@ -148,9 +164,16 @@ export default function App() {
       {settingsOpen && (
         <SettingsPanel
           thresholds={thresholds}
-          onSave={setThresholds}
+          onSave={handleSaveSettings}
           onClose={() => setSettingsOpen(false)}
         />
+      )}
+
+      {welcomeOpen && (
+        <WelcomeModal onClose={() => {
+          localStorage.setItem('welcomeSeen', '1')
+          setWelcomeOpen(false)
+        }} />
       )}
     </div>
   )

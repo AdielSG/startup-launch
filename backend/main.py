@@ -37,14 +37,10 @@ def _check_api_keys() -> None:
     from config import settings
 
     REQUIRED = [
-        ("TWITTER_BEARER_TOKEN", settings.twitter_bearer_token, "developer.x.com"),
-        ("APIFY_API_TOKEN",      settings.apify_api_token,      "console.apify.com/account/integrations"),
-        ("OPENAI_API_KEY",       settings.openai_api_key,       "platform.openai.com/api-keys"),
+        ("APIFY_API_TOKEN", settings.apify_api_token, "console.apify.com/account/integrations"),
+        ("OPENAI_API_KEY",  settings.openai_api_key,  "platform.openai.com/api-keys"),
     ]
-    OPTIONAL = [
-        ("CRUNCHBASE_API_KEY", settings.crunchbase_api_key,
-         "funding data will show $500K YC fallback for all companies"),
-    ]
+    OPTIONAL = []
 
     missing = [(name, source) for name, val, source in REQUIRED if not val]
 
@@ -84,6 +80,7 @@ def _run_migrations():
         "ALTER TABLE companies ADD COLUMN linkedin_fetched_at DATETIME",
         "ALTER TABLE companies ADD COLUMN funding_stage TEXT",
         "ALTER TABLE funding_rounds ADD COLUMN note TEXT",
+        "ALTER TABLE launch_posts ADD COLUMN has_video INTEGER DEFAULT 0",
     ]
     with engine.connect() as conn:
         for sql in new_columns:

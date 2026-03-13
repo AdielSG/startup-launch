@@ -15,9 +15,9 @@ The dashboard pulls all 167 YC Winter 2025 companies from the YCombinator direct
 | Feature | Details |
 |---|---|
 | **YC W25 tracking** | 167 companies scraped from YC Algolia API with founder contacts |
-| **X/Twitter engagement** | Launch tweet search using `from:{handle}` for company-scoped precision |
+| **X/Twitter engagement** | Launch tweet search via Apify (`apidojo/tweet-scraper`), `from:{handle}` for precision |
 | **LinkedIn metrics** | Paste any LinkedIn post URL → Apify fetches likes + reposts in real time |
-| **Funding data** | Real totals from Crunchbase Basic API; falls back to $500K YC standard deal |
+| **Funding data** | $500K YC standard deal for all W25 companies (accurate by definition) |
 | **Founder contacts** | LinkedIn profiles + X handles scraped from YC company pages |
 | **Poor performer detection** | Configurable X and LinkedIn thresholds; red rows + status badge |
 | **AI outreach DMs** | One-click personalised message generation via OpenAI gpt-4o-mini |
@@ -32,7 +32,7 @@ The dashboard pulls all 167 YC Winter 2025 companies from the YCombinator direct
 |---|---|
 | **Frontend** | React 18, Vite, Tailwind CSS, Recharts, Axios |
 | **Backend** | Python 3.12, FastAPI, SQLAlchemy, SQLite, APScheduler |
-| **Scraping** | Tweepy (X API v2), Apify client (LinkedIn), httpx (YC/Crunchbase) |
+| **Scraping** | Apify client (Twitter + LinkedIn), httpx (YC Algolia) |
 | **AI** | OpenAI SDK — gpt-4o-mini |
 
 ---
@@ -53,20 +53,14 @@ Create `backend/.env` (copy from `backend/.env.example`):
 
 ```bash
 # REQUIRED — server will not start without these
-TWITTER_BEARER_TOKEN=     # developer.x.com
-APIFY_API_TOKEN=          # console.apify.com/account/integrations
-OPENAI_API_KEY=           # platform.openai.com/api-keys
-
-# OPTIONAL — funding shows $500K YC fallback if missing
-CRUNCHBASE_API_KEY=       # data.crunchbase.com/docs/getting-started
+APIFY_API_TOKEN=     # console.apify.com/account/integrations
+OPENAI_API_KEY=      # platform.openai.com/api-keys
 ```
 
-| Key | Required | Where to get it | Free tier |
+| Key | Required | Where to get it | Usage |
 |---|---|---|---|
-| `TWITTER_BEARER_TOKEN` | ✅ Yes | [developer.x.com](https://developer.x.com) → Projects & Apps → Keys and Tokens | 500 reads/month (Pay-Per-Use); dashboard stays under 450 with built-in budget guard |
-| `APIFY_API_TOKEN` | ✅ Yes | [console.apify.com/account/integrations](https://console.apify.com/account/integrations) | $5 free monthly credit — sufficient for hundreds of LinkedIn lookups |
-| `OPENAI_API_KEY` | ✅ Yes | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) | Pay-per-use; gpt-4o-mini costs ~$0.001 per DM |
-| `CRUNCHBASE_API_KEY` | ⚠️ Optional | [data.crunchbase.com](https://data.crunchbase.com/docs/getting-started) | Basic tier — funding totals only (rounds require Enterprise) |
+| `APIFY_API_TOKEN` | ✅ Yes | [console.apify.com/account/integrations](https://console.apify.com/account/integrations) | Twitter scraping (~$0.002/company) + LinkedIn on-demand lookups; $5 free monthly credit |
+| `OPENAI_API_KEY` | ✅ Yes | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) | gpt-4o-mini DM generation; ~$0.001 per DM |
 
 ---
 
@@ -158,16 +152,12 @@ Phase 2 — YC Company Pages
 
 Phase 3 — Database upsert
   └─ Writes companies + contacts; inserts $500K YC standard
-     deal as a funding row if no Crunchbase data exists
+     deal as a funding row (accurate for all W25 companies)
 
-Phase 4 — X/Twitter enrichment
+Phase 4 — X/Twitter enrichment  (via Apify apidojo/tweet-scraper)
   └─ For companies with a known X handle: searches from:{handle}
      For others: falls back to name + launch keywords
   └─ Saves the most-liked result per company
-
-Phase 5 — Crunchbase enrichment  (requires API key)
-  └─ Resolves company name → Crunchbase permalink via autocomplete
-  └─ Fetches real funding total; replaces the $500K fallback row
 ```
 
 LinkedIn metrics are fetched **on-demand** per company via the LinkedIn icon in each table row — not as part of the batch scrape.

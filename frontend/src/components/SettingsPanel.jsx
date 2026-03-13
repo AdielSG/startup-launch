@@ -4,8 +4,8 @@ export default function SettingsPanel({ thresholds, onSave, onClose }) {
   const [xLikes,  setXLikes]  = useState(thresholds.xLikes)
   const [liLikes, setLiLikes] = useState(thresholds.liLikes)
 
-  function handleSave() {
-    onSave({ xLikes: Number(xLikes), liLikes: Number(liLikes) })
+  async function handleSave() {
+    await onSave({ xLikes: Number(xLikes), liLikes: Number(liLikes) })
     onClose()
   }
 

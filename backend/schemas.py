@@ -28,11 +28,12 @@ class FundingRoundRead(FundingRoundBase):
 # ── Launch Post ───────────────────────────────────────────────────────────────
 
 class LaunchPostBase(BaseModel):
-    platform: str                     # twitter | linkedin | hackernews
-    post_url: Optional[str] = None
-    likes: Optional[int] = None
-    reposts: Optional[int] = None
-    date: Optional[Date] = None
+    platform:  str                   # twitter | linkedin | hackernews
+    post_url:  Optional[str]  = None
+    likes:     Optional[int]  = None
+    reposts:   Optional[int]  = None
+    date:      Optional[Date] = None
+    has_video: Optional[bool] = False
 
 
 class LaunchPostCreate(LaunchPostBase):

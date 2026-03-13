@@ -36,7 +36,7 @@ export default function DmModal({ company, onClose }) {
       setError(
         err.response?.data?.detail ||
         err.message ||
-        'Failed to generate DM. Check that ANTHROPIC_API_KEY is set.'
+        'Failed to generate DM. Check that OPENAI_API_KEY is set.'
       )
     } finally {
       setLoading(false)

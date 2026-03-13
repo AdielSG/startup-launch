@@ -3,7 +3,7 @@
 // Clerk   → Poor   (X:   423  LI:  67  — both below threshold) → red row
 // Resend  → Poor   (X:   189  LI:  34  — both below threshold) → red row
 
-export const THRESHOLDS = { xLikes: 500, liLikes: 100 }
+export const THRESHOLDS = { xLikes: 200, liLikes: 50 }
 
 export const MOCK_COMPANIES = [
   {

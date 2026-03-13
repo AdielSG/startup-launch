@@ -333,25 +333,21 @@ def _upsert_to_db(companies: list[dict]) -> int:
 
 async def _enrich_with_twitter(companies: list[dict]) -> int:
     """
-    For each company in the list, search for its best launch tweet and upsert
-    the result into launch_posts (platform='twitter').
+    For each company in the list, search for its best launch tweet via Apify
+    and upsert the result into launch_posts (platform='twitter').
 
-    Skips gracefully when:
-      - TWITTER_BEARER_TOKEN is not configured
-      - The monthly budget guard is reached
-      - Any other per-company error occurs
-
-    Returns the number of tweets saved.
+    Skips gracefully when APIFY_API_TOKEN is not configured or any per-company
+    error occurs.  Returns the number of tweets saved.
     """
     from config import settings
-    if not settings.twitter_bearer_token:
-        print("  [twitter] TWITTER_BEARER_TOKEN not set — skipping enrichment")
+    if not settings.apify_api_token:
+        print("  [twitter] APIFY_API_TOKEN not set — skipping enrichment")
         return 0
 
     try:
-        from scrapers.twitter import find_and_save, TwitterBudgetError
+        from scrapers.twitter import find_and_save
     except ImportError:
-        from twitter import find_and_save, TwitterBudgetError  # CLI fallback
+        from twitter import find_and_save  # CLI fallback
 
     from database import SessionLocal
     from models import Company as _Company
@@ -379,9 +375,6 @@ async def _enrich_with_twitter(companies: list[dict]) -> int:
                     saved += 1
                 else:
                     print(f"  [twitter] {name}: no tweet found")
-            except TwitterBudgetError as exc:
-                print(f"  [twitter] Budget guard reached: {exc}")
-                break
             except Exception as exc:
                 print(f"  [twitter] {name}: error — {exc}")
     finally:
@@ -389,96 +382,6 @@ async def _enrich_with_twitter(companies: list[dict]) -> int:
 
     print(f"  [twitter] {saved} tweet(s) saved")
     return saved
-
-
-# ── Crunchbase enrichment ─────────────────────────────────────────────────────
-
-async def _enrich_with_crunchbase(companies: list[dict]) -> int:
-    """
-    For each company, resolve a Crunchbase permalink then fetch funding totals.
-
-    If funding_total > 0:
-      - Delete the $500 K YC placeholder row (source='yc')
-      - Insert a new FundingRound row with the real total (source='crunchbase')
-    Otherwise the YC placeholder is kept as fallback.
-
-    Returns the number of companies enriched with real funding data.
-    """
-    from config import settings
-    if not settings.crunchbase_api_key:
-        print("  [crunchbase] CRUNCHBASE_API_KEY not set — skipping enrichment")
-        return 0
-
-    try:
-        from scrapers.crunchbase import get_permalink, get_funding
-    except ImportError:
-        from crunchbase import get_permalink, get_funding  # CLI fallback
-
-    from database import SessionLocal
-    from models import Company as _Company, FundingRound
-
-    db = SessionLocal()
-    enriched = 0
-    try:
-        print(f"  [crunchbase] enriching {len(companies)} companies ...")
-        for company_data in companies:
-            name   = company_data.get("name")
-            domain = company_data.get("domain")
-            if not name:
-                continue
-            row = db.query(_Company).filter(_Company.name == name).first()
-            if not row:
-                continue
-
-            try:
-                permalink = await get_permalink(name, domain)
-                if not permalink:
-                    print(f"  [crunchbase] {name}: no permalink")
-                    continue
-
-                funding = await get_funding(permalink)
-                total = (funding or {}).get("funding_total") or 0
-                if total <= 0:
-                    print(f"  [crunchbase] {name}: no funding data, keeping YC fallback")
-                    continue
-
-                # Replace YC placeholder with real Crunchbase total
-                db.query(FundingRound).filter(
-                    FundingRound.company_id == row.id,
-                    FundingRound.source     == "yc",
-                ).delete()
-
-                num_rounds = funding.get("num_funding_rounds") or "?"
-                db.add(FundingRound(
-                    company_id = row.id,
-                    amount     = total,
-                    round_type = funding.get("last_funding_type"),
-                    source     = "crunchbase",
-                    note       = f"Total raised per Crunchbase ({num_rounds} round(s))",
-                ))
-
-                # Backfill description if company has none
-                if funding.get("short_description") and not row.description:
-                    row.description = funding["short_description"]
-
-                db.commit()
-                print(
-                    f"  [crunchbase] {name}: ${total:,.0f}"
-                    f"  ({funding.get('last_funding_type') or 'unknown'},"
-                    f" {num_rounds} round(s))"
-                )
-                enriched += 1
-
-            except Exception as exc:
-                db.rollback()
-                print(f"  [crunchbase] {name}: error — {exc}")
-
-    finally:
-        db.close()
-
-    kept = len(companies) - enriched
-    print(f"  [crunchbase] {enriched} enriched with real data, {kept} kept YC fallback")
-    return enriched
 
 
 # ── Main scraper ──────────────────────────────────────────────────────────────
@@ -572,11 +475,8 @@ async def scrape_yc_batch(
         upserted = _upsert_to_db(copy.deepcopy(results))
         print(f"  [db] upserted {upserted} companies")
 
-        # ── Phase 4: Twitter enrichment ───────────────────────────────────────
+        # ── Phase 4: Twitter enrichment (via Apify) ──────────────────────────
         tweets_saved = await _enrich_with_twitter(results)
-
-        # ── Phase 5: Crunchbase enrichment ────────────────────────────────────
-        await _enrich_with_crunchbase(results)
 
     return results, tweets_saved
 

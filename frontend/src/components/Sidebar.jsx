@@ -16,8 +16,6 @@ const ICONS = {
 
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
-  { id: 'companies', label: 'Companies', icon: 'companies' },
-  { id: 'analytics', label: 'Analytics', icon: 'analytics', disabled: true },
 ]
 
 export default function Sidebar({ activeNav, onNav, onOpenSettings, onRefresh, scraping }) {

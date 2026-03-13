@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from sqlalchemy import Column, Date, DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, Date, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
 from database import Base
@@ -56,10 +56,11 @@ class LaunchPost(Base):
     id = Column(Integer, primary_key=True, index=True)
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False, index=True)
     platform = Column(String, nullable=False)     # twitter | linkedin | hackernews
-    post_url = Column(String, nullable=True)
-    likes = Column(Integer, nullable=True)
-    reposts = Column(Integer, nullable=True)
-    date = Column(Date, nullable=True)
+    post_url  = Column(String,  nullable=True)
+    likes     = Column(Integer, nullable=True)
+    reposts   = Column(Integer, nullable=True)
+    date      = Column(Date,    nullable=True)
+    has_video = Column(Boolean, nullable=False, default=False)
 
     company = relationship("Company", back_populates="launch_posts")
 

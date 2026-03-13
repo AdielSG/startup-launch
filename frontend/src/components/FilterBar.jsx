@@ -21,6 +21,7 @@ export default function FilterBar({ batch, onBatchChange, perf, onPerfChange }) 
         className={SELECT_CLS}
       >
         <option value="">All Batches</option>
+        <option value="assessment">★ Assessment List</option>
         {YC_BATCHES.map(b => (
           <option key={b} value={b}>{b}</option>
         ))}

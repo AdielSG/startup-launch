@@ -20,12 +20,9 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    twitter_bearer_token: str = ""
-    crunchbase_api_key: str   = ""
-    hunter_api_key: str       = ""
-    openai_api_key: str       = ""
-    apify_api_token: str      = ""
-    database_url: str         = "sqlite:///./launches.db"
+    openai_api_key:    str = ""
+    apify_api_token:   str = ""
+    database_url:      str = "sqlite:///./launches.db"
 
 
 settings = Settings()

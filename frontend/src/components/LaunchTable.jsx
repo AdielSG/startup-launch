@@ -4,6 +4,7 @@ import {
   getLiLikes,
   getTotalFunding,
   getXLikes,
+  getXPost,
   isPoorPerformer,
 } from '../data/mockData'
 import DmModal from './DmModal'
@@ -78,11 +79,13 @@ export default function LaunchTable({ companies, thresholds, onReload }) {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {companies.map(c => {
-              const poor    = isPoorPerformer(c, thresholds)
-              const xLikes  = getXLikes(c)
+              const poor     = isPoorPerformer(c, thresholds)
+              const xPost    = getXPost(c)
+              const xLikes   = xPost?.likes ?? null
+              const hasVideo = xPost?.has_video ?? false
               // Prefer the dedicated company column; fall back to launch_posts (mock data)
-              const liLikes = c.linkedin_likes ?? getLiLikes(c)
-              const contact = c.contacts?.[0]
+              const liLikes  = c.linkedin_likes ?? getLiLikes(c)
+              const contact  = c.contacts?.[0]
 
               return (
                 <tr
@@ -108,15 +111,34 @@ export default function LaunchTable({ companies, thresholds, onReload }) {
                     </span>
                   </td>
 
-                  <td className="px-4 py-3.5 text-right font-medium text-gray-700 tabular-nums">
-                    {formatFunding(getTotalFunding(c))}
+                  <td className="px-4 py-3.5 text-right">
+                    {c.funding_rounds?.length > 0 && c.funding_rounds.every(r => r.source === 'yc')
+                      ? <span className="text-[11px] font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded">YC Deal</span>
+                      : <span className="font-medium text-gray-700 tabular-nums">{formatFunding(getTotalFunding(c))}</span>
+                    }
                   </td>
 
-                  {/* X Likes */}
-                  <td className={`px-4 py-3.5 text-right font-medium tabular-nums ${
-                    xLikes !== null && xLikes < thresholds.xLikes ? 'text-red-600' : 'text-gray-700'
-                  }`}>
-                    {xLikes !== null ? xLikes.toLocaleString() : '—'}
+                  {/* X Likes + video badge + Watch button */}
+                  <td className="px-4 py-3.5">
+                    <div className="flex items-center justify-end gap-1.5">
+                      {hasVideo && (
+                        <span title="Launch video" className="text-sm leading-none">🎥</span>
+                      )}
+                      <span className={`font-medium tabular-nums ${
+                        xLikes !== null && xLikes < thresholds.xLikes ? 'text-red-600' : 'text-gray-700'
+                      }`}>
+                        {xLikes !== null ? xLikes.toLocaleString() : '—'}
+                      </span>
+                      {hasVideo && xPost?.post_url && (
+                        <button
+                          onClick={() => window.open(xPost.post_url, '_blank')}
+                          title="Watch launch video"
+                          className="text-[10px] font-semibold px-1.5 py-0.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded transition-colors"
+                        >
+                          &#9654; Watch
+                        </button>
+                      )}
+                    </div>
                   </td>
 
                   {/* LinkedIn Likes — number + icon button to open modal */}
