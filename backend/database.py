@@ -14,9 +14,11 @@ if _is_sqlite:
 else:
     # PostgreSQL on Vercel serverless: NullPool avoids stale connections
     # between Lambda invocations (each request gets a fresh connection).
+    # sslmode=require is mandatory for Supabase Session Pooler from cloud IPs.
     engine = create_engine(
         settings.database_url,
         poolclass=NullPool,
+        connect_args={"sslmode": "require"},
     )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
