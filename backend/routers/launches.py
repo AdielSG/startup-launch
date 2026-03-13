@@ -28,7 +28,7 @@ router = APIRouter()
 def list_companies(
     yc_batch: Optional[str] = Query(None, description="Filter by YC batch, e.g. W25"),
     skip: int = 0,
-    limit: int = 100,
+    limit: int = 500,
     db: Session = Depends(get_db),
 ):
     query = db.query(Company)
